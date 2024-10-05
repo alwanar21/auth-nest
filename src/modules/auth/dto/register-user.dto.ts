@@ -5,7 +5,7 @@ import {
   Matches,
   ValidateIf,
 } from 'class-validator';
-import { IsEqual } from '../custom-decorator/IsEqual.decorator';
+import { IsMatch } from 'src/common/decorators/match.decorator';
 
 export class RegisterUserDTO {
   @IsNotEmpty({ message: 'Email must not be empty' })
@@ -23,6 +23,6 @@ export class RegisterUserDTO {
   @IsNotEmpty({ message: 'Confirm Password must not be empty' })
   @IsString({ message: 'Confirm Password must be a string' })
   @ValidateIf((o) => o.password)
-  @IsEqual('password')
+  @IsMatch('password')
   confirmPassword: string;
 }

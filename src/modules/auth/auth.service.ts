@@ -1,29 +1,33 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { PrismaService } from '../common/prisma.service';
+import { PrismaService } from '../../common/services/prisma.service';
 import { RegisterUserDTO } from './dto/register-user.dto';
 // import { LoginUserDTO } from './dto/login-user.dto';
 import { nanoid } from 'nanoid';
 import * as bcrypt from 'bcrypt';
 import { LoginUserDTO } from './dto/login-user.dto';
-import { EmailService } from '../common/email.service';
-import { JwtService } from '@nestjs/jwt';
+import { EmailService } from '../../common/services/email.service';
 import { EmailVerificationDTO } from './dto/email-verification.dto';
 import { Request } from 'express';
+import { ForgotPasswordDTO } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { TokenJwtService } from 'src/common/services/jwt.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
+    private readonly prisma: PrismaService,
     private readonly email: EmailService,
-    private readonly jwtService: JwtService,
+    private readonly jwtService: TokenJwtService,
   ) {}
 
   async register(registerUserDto: RegisterUserDTO) {
-    //check data applied is available or not
+    //TODO: check email is exist or not
     const user = await this.prisma.user.findUnique({
       where: {
         email: registerUserDto.email,
@@ -34,7 +38,7 @@ export class AuthService {
       throw new BadRequestException('Email already in use');
     }
 
-    //create data user
+    //TODO: create user data
     const userId = nanoid();
     const username = await this.generateUsername();
     const hashedPassword = await bcrypt.hash(registerUserDto.password, 10);
@@ -52,14 +56,14 @@ export class AuthService {
       },
     });
 
-    // Generate email verification Token & send email
+    //TODO: generate email verification Token & send it via email
     const payload = { id: userId };
 
-    let emailVerificationToken = this.generateToken(
+    let emailVerificationToken = this.jwtService.generateJwtToken(
       payload,
       'emailVerification',
     );
-    emailVerificationToken = `http://localhost:3000/api/verify-email/${emailVerificationToken}`;
+    emailVerificationToken = `http://localhost:3000/verify-email/${emailVerificationToken}`;
 
     this.email.emailVerification(
       registerUserDto.email,
@@ -74,7 +78,7 @@ export class AuthService {
   }
 
   async login(loginUserDto: LoginUserDTO) {
-    // cek email and password
+    //TODO: check email is exist or not
     const user = await this.prisma.user.findUnique({
       where: {
         email: loginUserDto.email,
@@ -85,6 +89,7 @@ export class AuthService {
       throw new BadRequestException('Invalid email or password');
     }
 
+    //TODO: check password valid or not
     const matchPassword = await bcrypt.compare(
       loginUserDto.password,
       user.password,
@@ -94,16 +99,18 @@ export class AuthService {
       throw new BadRequestException('Invalid email or password');
     }
 
+    //TODO: check user's email valid or not, if not return error
     if (user.isActive == false) {
       throw new UnauthorizedException(
-        'Your email is not verified. Please verify yaour email first',
+        'Your email is not verified. Please verify your email first',
       );
     }
 
+    //TODO: generate access & refresh token, and store refresh token in database
     const payload = { id: user.id, roles: user.roles };
 
-    const accessToken = this.generateToken(payload, 'access');
-    const refreshToken = this.generateToken(payload, 'refresh');
+    const accessToken = this.jwtService.generateJwtToken(payload, 'access');
+    const refreshToken = this.jwtService.generateJwtToken(payload, 'refresh');
 
     const sessionId = nanoid();
     await this.prisma.session.create({
@@ -125,23 +132,9 @@ export class AuthService {
     };
   }
 
-  async verifyEmailToken(token: string) {
-    const decodedToken = this.verifyToken(token, 'emailVerification');
-
-    await this.prisma.user.update({
-      where: {
-        id: decodedToken.id,
-      },
-      data: {
-        isActive: true,
-      },
-    });
-    return {
-      message: 'Email successfully verified',
-    };
-  }
-
   async resendEmailVerification(emailVerificationDto: EmailVerificationDTO) {
+    //TODO: Check if the email exists
+    //TODO: If the email does not exist or it already exists but is verified, throw an error
     const user = await this.prisma.user.findUnique({
       where: {
         email: emailVerificationDto.email,
@@ -160,18 +153,16 @@ export class AuthService {
     }
 
     if (user.isActive) {
-      throw new BadRequestException('Email is already verified.');
+      throw new ConflictException('Email is already verified.');
     }
 
+    //TODO: resend email verification
     const payload = { id: user.id };
-
-    // Generate email verification Token
-    // Generate email verification Token & send email
-    let emailVerificationToken = this.generateToken(
+    let emailVerificationToken = this.jwtService.generateJwtToken(
       payload,
       'emailVerification',
     );
-    emailVerificationToken = `http://localhost:3000/api/verify-email/${emailVerificationToken}`;
+    emailVerificationToken = `http://localhost:3000/verify-email/${emailVerificationToken}`;
 
     this.email.emailVerification(
       user.email,
@@ -184,11 +175,102 @@ export class AuthService {
     };
   }
 
+  async verifyEmailToken(token: string) {
+    //TODO: Check token valid or not
+    const decodedToken = this.jwtService.verifyJwtToken(
+      token,
+      'emailVerification',
+    );
+
+    // TODO Mark the user's email as verified
+    await this.prisma.user.update({
+      where: {
+        id: decodedToken.id,
+      },
+      data: {
+        isActive: true,
+      },
+    });
+    return {
+      message: 'Email successfully verified',
+    };
+  }
+
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDTO) {
+    //TODO: check email is exist or not
+    const user = await this.prisma.user.findUnique({
+      where: { email: forgotPasswordDto.email },
+      include: {
+        profile: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    });
+    if (!user) {
+      throw new NotFoundException('Email not registered');
+    }
+
+    const payload = { id: user.id };
+    let emailResetPasswordToken = this.jwtService.generateJwtToken(
+      payload,
+      'emailVerification',
+    );
+
+    emailResetPasswordToken = `http://localhost:3000/auth/reset-password/${emailResetPasswordToken}`;
+
+    this.email.emailResetPassword(
+      forgotPasswordDto.email,
+      user.profile.username,
+      emailResetPasswordToken,
+    );
+
+    return {
+      message: 'Email has been sent. Check your email to verify your account',
+    };
+  }
+
+  async resetPasswordValidator(token: string) {
+    const decoded = this.jwtService.verifyJwtToken(token, 'emailVerification');
+    const user = this.prisma.user.findUnique({
+      where: {
+        id: decoded.id,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('user Not found');
+    }
+    return { message: 'user found' };
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    const decoded = this.jwtService.verifyJwtToken(
+      resetPasswordDto.token,
+      'emailVerification',
+    );
+
+    const hashedPassword = await bcrypt.hash(resetPasswordDto.password, 10);
+
+    await this.prisma.user.update({
+      where: {
+        id: decoded.id,
+      },
+      data: {
+        password: hashedPassword,
+      },
+    });
+
+    return { message: 'Password changed successfully' };
+  }
+
   async refreshToken(request: Request) {
+    //TODO: check token valid or not
     const authHeader = request.headers['authorization'];
 
     if (!authHeader) {
-      throw new UnauthorizedException('Authorization header not found');
+      throw new UnauthorizedException('Token is invalid or has expired');
     }
 
     const token = authHeader.split(' ')[1];
@@ -196,6 +278,7 @@ export class AuthService {
       throw new UnauthorizedException('Token is invalid or has expired');
     }
 
+    //TODO: check if session is available
     const session = await this.prisma.session.findUnique({
       where: {
         id: token,
@@ -206,10 +289,16 @@ export class AuthService {
       throw new UnauthorizedException('Token is invalid or has expired');
     }
 
-    const decodedToken = this.verifyToken(session.token, 'refresh');
+    //TODO: check token valid or not
+    const decodedToken = this.jwtService.verifyJwtToken(
+      session.token,
+      'refresh',
+    );
+
+    //TODO: Generate a new token, invalidate the previous session, and save the new token.
     const payload = { id: decodedToken.id, roles: decodedToken.roles };
-    const accessToken = this.generateToken(payload, 'access');
-    const refreshToken = this.generateToken(payload, 'refresh');
+    const accessToken = this.jwtService.generateJwtToken(payload, 'access');
+    const refreshToken = this.jwtService.generateJwtToken(payload, 'refresh');
 
     await this.prisma.session.delete({
       where: { id: session.id },
@@ -234,67 +323,12 @@ export class AuthService {
     };
   }
 
-  // resetPassword(id: number) {
-  //   return `This action removes a #${id} auth`;
-  // }
+  // ? Helper function
 
-  //helper
-
-  private generateToken(
-    payload: { id: string; roles?: 'user' | 'admin' },
-    type: 'access' | 'refresh' | 'emailVerification',
-  ): string {
-    let expiresIn: string;
-
-    switch (type) {
-      case 'access':
-        expiresIn = '1m';
-        return this.jwtService.sign(payload, {
-          secret: process.env.JWT_ACCESS_SECRET,
-          expiresIn,
-        });
-      case 'refresh':
-        expiresIn = '7d';
-        return this.jwtService.sign(payload, {
-          secret: process.env.JWT_REFRESH_SECRET,
-          expiresIn,
-        });
-      case 'emailVerification':
-        expiresIn = '10m';
-        return this.jwtService.sign(payload, {
-          secret: process.env.JWT_EMAIL_VERIFICATION_SECRET,
-          expiresIn,
-        });
-    }
-  }
-
-  verifyToken(
-    token: string,
-    type: 'access' | 'refresh' | 'emailVerification',
-  ): { id: string; roles?: 'user' | 'admin' } {
-    let secret: string;
-
-    switch (type) {
-      case 'access':
-        secret = process.env.JWT_ACCESS_SECRET;
-        break;
-      case 'refresh':
-        secret = process.env.JWT_REFRESH_SECRET;
-        break;
-      case 'emailVerification':
-        secret = process.env.JWT_EMAIL_VERIFICATION_SECRET;
-        break;
-    }
-
-    try {
-      const decoded = this.jwtService.verify(token, { secret });
-
-      return decoded;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      throw new UnauthorizedException('Token is invalid or has expired');
-    }
-  }
+  /**
+   * This function is used to generate username for new user
+   * @returns Promise<string>
+   */
 
   private async generateUsername() {
     let username: string;

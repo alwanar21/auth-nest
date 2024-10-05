@@ -4,7 +4,7 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "assets": ["modules/common/templates/**/*.hbs"],
+    "assets": ["common/templates/**/*.hbs"],
     "watchAssets": true
   }
 }

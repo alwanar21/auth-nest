@@ -1,9 +1,15 @@
+import {
+  BadRequestException,
+  RequestMethod,
+  ValidationPipe,
+} from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { NestFactory } from '@nestjs/core';
+import { join } from 'path';
 import { AppModule } from './app.module';
-import { BadRequestException, ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -17,7 +23,17 @@ async function bootstrap() {
       },
     }),
   );
-  app.setGlobalPrefix('/api/');
+  app.setViewEngine('hbs');
+  app.setBaseViewsDir(join(process.cwd(), 'views'));
+
+  app.setGlobalPrefix('/api/', {
+    exclude: [
+      { path: 'verify-email/:token', method: RequestMethod.GET },
+      { path: 'profile/profile-picture/:filename', method: RequestMethod.GET },
+      { path: 'auth/reset-password/:token', method: RequestMethod.GET },
+      { path: 'auth/reset-password/:token', method: RequestMethod.GET },
+    ],
+  });
   await app.listen(3000);
 }
 bootstrap();
