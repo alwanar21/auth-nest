@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../common/services/prisma.service';
 import { RegisterUserDTO } from './dto/register-user.dto';
-// import { LoginUserDTO } from './dto/login-user.dto';
 import { nanoid } from 'nanoid';
 import * as bcrypt from 'bcrypt';
 import { LoginUserDTO } from './dto/login-user.dto';

@@ -10,6 +10,7 @@ import { TokenJwtService } from './services/jwt.service';
 
 import { AuthGuard } from './guards/auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { CornService } from './services/corn.service';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { RolesGuard } from './guards/roles.guard';
     PrismaService,
     EmailService,
     TokenJwtService,
+    CornService,
     AuthGuard,
     RolesGuard,
   ],
