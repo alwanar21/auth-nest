@@ -25,7 +25,7 @@ async function bootstrap() {
   );
   app.setViewEngine('hbs');
   app.setBaseViewsDir(join(process.cwd(), 'views'));
-
+  app.enableCors();
   app.setGlobalPrefix('/api/', {
     exclude: [
       { path: 'verify-email/:token', method: RequestMethod.GET },
