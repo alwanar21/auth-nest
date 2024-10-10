@@ -82,6 +82,17 @@ export class AuthService {
       where: {
         email: loginUserDto.email,
       },
+      select: {
+        id: true,
+        roles: true,
+        password: true,
+        isActive: true,
+        profile: {
+          select: {
+            username: true,
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -125,9 +136,11 @@ export class AuthService {
     return {
       message: 'Login successful',
       data: {
-        accessToken,
-        refreshToken: sessionId,
+        id: user.id,
+        username: user.profile.username,
       },
+      accessToken,
+      refreshToken: sessionId,
     };
   }
 

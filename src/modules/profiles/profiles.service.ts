@@ -133,14 +133,6 @@ export class ProfileService {
       },
     });
 
-    if (updateProfileDto.username == user.profile.username) {
-      throw new FormHttpException([
-        {
-          property: 'username',
-          message: 'Username cannot be the same as the old one',
-        },
-      ]);
-    }
     if (
       usernameIsAvailable &&
       usernameIsAvailable.username !== user.profile.username
@@ -164,7 +156,13 @@ export class ProfileService {
       },
     });
 
-    return { message: 'Profile changed successfully' };
+    return {
+      message: 'Profile changed successfully',
+      data: {
+        username: updateProfileDto.username,
+        birthDate: updateProfileDto.birthDate,
+      },
+    };
   }
 
   async changeProfilePicture(userId: string, file: Express.Multer.File) {

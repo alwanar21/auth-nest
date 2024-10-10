@@ -9,7 +9,7 @@ export class UpdateProfileDto {
   })
   username: string;
 
-  @IsNotEmpty({ message: 'Birth date must not be empty' })
-  @IsDateString({}, { message: 'Birth Date must be a valid Date object' })
+  @IsNotEmpty({ message: 'Birth date is required' })
+  @IsDateString({}, { message: 'Birth Date must be a valid Date' })
   birthDate: Date;
 }

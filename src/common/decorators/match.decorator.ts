@@ -14,7 +14,7 @@ export class IsMatchConstraint implements ValidatorConstraintInterface {
   }
 
   defaultMessage(args: any) {
-    return `Confirm Password must match ${args.constraints[0]}`;
+    return `Confirm Password must match with ${args.constraints[0]}`;
   }
 }
 

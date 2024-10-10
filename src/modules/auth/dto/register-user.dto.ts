@@ -8,11 +8,11 @@ import {
 import { IsMatch } from 'src/common/decorators/match.decorator';
 
 export class RegisterUserDTO {
-  @IsNotEmpty({ message: 'Email must not be empty' })
-  @IsEmail({}, { message: 'Email must be a valid email address' })
+  @IsNotEmpty({ message: 'Email is required' })
+  @IsEmail({}, { message: 'Email must be a valid email format' })
   email: string;
 
-  @IsNotEmpty({ message: 'Password must not be empty' })
+  @IsNotEmpty({ message: 'Password is required' })
   @IsString({ message: 'Password must be a string' })
   @Matches(/^(?=.*[A-Z])(?=.*\W).{7,}$/, {
     message:
@@ -20,7 +20,7 @@ export class RegisterUserDTO {
   })
   password: string;
 
-  @IsNotEmpty({ message: 'Confirm Password must not be empty' })
+  @IsNotEmpty({ message: 'Confirm Password is required' })
   @IsString({ message: 'Confirm Password must be a string' })
   @ValidateIf((o) => o.password)
   @IsMatch('password')

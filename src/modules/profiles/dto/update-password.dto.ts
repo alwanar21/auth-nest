@@ -2,11 +2,11 @@ import { IsNotEmpty, IsString, Matches, ValidateIf } from 'class-validator';
 import { IsMatch } from 'src/common/decorators/match.decorator';
 
 export class UpdatePasswordDto {
-  @IsNotEmpty({ message: 'Current Password must not be empty' })
+  @IsNotEmpty({ message: 'Current password is required' })
   @IsString({ message: 'Current Password must be a string' })
   currentPassword: string;
 
-  @IsNotEmpty({ message: 'New Password must not be empty' })
+  @IsNotEmpty({ message: 'New Password is required' })
   @IsString({ message: 'New Password must be a string' })
   @Matches(/^(?=.*[A-Z])(?=.*\W).{7,}$/, {
     message:
@@ -14,7 +14,7 @@ export class UpdatePasswordDto {
   })
   newPassword: string;
 
-  @IsNotEmpty({ message: 'Confirm Password must not be empty' })
+  @IsNotEmpty({ message: 'Confirm Password is required' })
   @IsString({ message: 'Confirm Password must be a string' })
   @ValidateIf((o) => o.newPassword)
   @IsMatch('newPassword')
