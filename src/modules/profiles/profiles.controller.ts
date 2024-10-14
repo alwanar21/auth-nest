@@ -93,7 +93,7 @@ export class ProfileController {
 
         callback(null, true);
       },
-      limits: { fileSize: 2000000 },
+      limits: { fileSize: 5000000 },
     }),
   )
   async changeProfilePicture(

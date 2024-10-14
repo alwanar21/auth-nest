@@ -7,12 +7,13 @@ import {
   Get,
   Req,
   Put,
+  Res,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterUserDTO } from './dto/register-user.dto';
 import { LoginUserDTO } from './dto/login-user.dto';
 import { EmailVerificationDTO } from './dto/email-verification.dto';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { ForgotPasswordDTO } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
@@ -46,9 +47,11 @@ export class AuthController {
 
   @Get('verify-email/:token')
   @HttpCode(200)
-  async verifyEmailToken(@Param('token') token: string) {
-    const result = await this.authService.verifyEmailToken(token);
-    return result;
+  async verifyEmailToken(@Param('token') token: string, @Res() res: Response) {
+    await this.authService.verifyEmailToken(token);
+    return res.redirect(
+      'http://localhost:5173?message=Email+successfully+verified',
+    );
   }
 
   @Put('auth/forgot-password')

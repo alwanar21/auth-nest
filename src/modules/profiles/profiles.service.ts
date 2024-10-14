@@ -200,6 +200,9 @@ export class ProfileService {
     }); // Simpan perubahan ke database
     return {
       message: 'Profile picture updated successfully',
+      data: {
+        picture: newProfilepicture,
+      },
     };
   }
 

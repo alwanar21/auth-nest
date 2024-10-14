@@ -203,6 +203,7 @@ export class AuthService {
         isActive: true,
       },
     });
+
     return {
       message: 'Email successfully verified',
     };
@@ -230,7 +231,7 @@ export class AuthService {
       'emailVerification',
     );
 
-    emailResetPasswordToken = `http://localhost:3000/auth/reset-password/${emailResetPasswordToken}`;
+    emailResetPasswordToken = `http://localhost:5173/reset-password/${emailResetPasswordToken}`;
 
     this.email.emailResetPassword(
       forgotPasswordDto.email,
